@@ -2,7 +2,7 @@ package main
 
 import (
 	"bufio"
-	// "fmt"
+	"fmt"
 	"net"
 	"strings"
 )
@@ -77,12 +77,15 @@ func (c *client) readInput() {
 				args:   args,
 			}
 		default:
-			c.commands <- command{
-				id:     CMD_MSG,
-				client: c,
-				args:   args,
+			if strings.HasPrefix(cmd, "/") {
+				c.message(fmt.Sprintf("SERVER: unknown command %s", cmd))
+			} else {
+				c.commands <- command{
+					id:     CMD_MSG,
+					client: c,
+					args:   args,
+				}
 			}
-			// c.message(fmt.Sprintf("SERVER: unknown command %s", cmd))
 		}
 	}
 }
