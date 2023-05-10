@@ -1,13 +1,17 @@
 # tcp-chat
 
+```sh
 make install
+
 make run
+```
 
-## connect to server
+## connect to server using netcat
 
+```sh
 nc localhost 1234
-
+```
 
 ## TODO
 
-put listening port as command line argument ?
+- remove room when empty

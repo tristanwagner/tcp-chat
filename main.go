@@ -1,24 +1,30 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"net"
 )
 
 func main() {
+
+	port := flag.Int("p", 1234, "the port number on which the server runs")
+
+	flag.Parse()
+
 	// init server
 	s := NewServer()
 
 	// run in go routine
 	go s.run()
 
-	listener, err := net.Listen("tcp", ":1234")
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
 	if err != nil {
 		log.Fatalf("Unable to start server: %s", err.Error())
 	}
 
-	fmt.Printf("Started listening on port %s\n", "1234")
+	fmt.Printf("Started listening on port %d\n", *port)
 
 	defer listener.Close()
 
