@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"time"
 )
 
 type client struct {
@@ -14,12 +15,18 @@ type client struct {
 	commands chan<- command
 }
 
+const hhmmss = "15:04:05"
+
 func (c *client) message(msg string) {
-	c.conn.Write([]byte("> " + msg + "\n"))
+	c.conn.Write([]byte(fmt.Sprintf("[%s] %s\n", time.Now().Format(hhmmss), msg)))
+}
+
+func (c *client) srvmessage(msg string) {
+	c.message("SERVER :> " + msg)
 }
 
 func (c *client) err(err error) {
-	c.conn.Write([]byte("ERROR: " + err.Error() + "\n"))
+	c.message("ERROR :> " + err.Error())
 }
 
 func (c *client) readInput() {
@@ -78,7 +85,7 @@ func (c *client) readInput() {
 			}
 		default:
 			if strings.HasPrefix(cmd, "/") {
-				c.message(fmt.Sprintf("SERVER: unknown command %s", cmd))
+				c.srvmessage(fmt.Sprintf("unknown command %s", cmd))
 			} else {
 				c.commands <- command{
 					id:     CMD_MSG,

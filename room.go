@@ -12,3 +12,9 @@ func (r *room) broadcast(sender *client, msg string) {
 		}
 	}
 }
+
+func (r *room) broadcastServerMessage(msg string) {
+	for _, member := range r.members {
+		member.srvmessage(msg)
+	}
+}

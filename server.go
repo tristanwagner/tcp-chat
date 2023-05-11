@@ -66,7 +66,7 @@ func (s *server) newClient(conn net.Conn) {
 		args:   []string{},
 	})
 
-	c.message("SERVER: Welcome to the tcp chat, please type /help for more informations.")
+	c.srvmessage("Welcome to the tcp chat, please type /help for more informations.")
 
 	c.readInput()
 }
@@ -78,9 +78,9 @@ func (s *server) rename(cmd command) {
 		delete(s.clients, cmd.client.name)
 		cmd.client.name = name
 		s.clients[name] = cmd.client
-		cmd.client.message(fmt.Sprintf("SERVER: Ok now I will call you %s", name))
+		cmd.client.srvmessage(fmt.Sprintf("Ok now I will call you %s", name))
 	} else {
-		cmd.client.message(fmt.Sprintf("SERVER: Sorry the username \"%s\" is taken", name))
+		cmd.client.srvmessage(fmt.Sprintf("Sorry the username \"%s\" is taken", name))
 	}
 }
 
@@ -89,7 +89,7 @@ func (s *server) message(cmd command) {
 	if ok := cmd.client.room; ok != nil && len(cmd.client.room.members) > 1 {
 		cmd.client.room.broadcast(cmd.client, cmd.client.name+": "+msg)
 	} else {
-		cmd.client.message("SERVER: Nobody hears you")
+		cmd.client.srvmessage("Nobody hears you")
 	}
 }
 
@@ -108,20 +108,20 @@ func (s *server) joinRoom(cmd command) {
 		s.rooms[name] = r
 	}
 
-	// add client to room members
-	r.members[cmd.client.name] = cmd.client
-
 	//leave previous room if any
 	s.leaveRoom(cmd)
+
+	// broadcast to room
+	r.broadcastServerMessage(fmt.Sprintf("user \"%s\" has joined the room.", cmd.client.name))
+
+	// add client to room members
+	r.members[cmd.client.name] = cmd.client
 
 	// set new room on client
 	cmd.client.room = r
 
-	// broadcast to room
-	r.broadcast(cmd.client, fmt.Sprintf("SERVER: %s has joined the room.", cmd.client.name))
-
 	// greet client from joining room
-	cmd.client.message(fmt.Sprintf("SERVER: Welcome to the room \"%s\".", r.name))
+	cmd.client.srvmessage(fmt.Sprintf("Welcome to the room \"%s\".", r.name))
 }
 
 func (s *server) listRooms(cmd command) {
@@ -130,7 +130,7 @@ func (s *server) listRooms(cmd command) {
 		names = append(names, name)
 	}
 
-	cmd.client.message(fmt.Sprintf("SERVER: Here are the available rooms: %s", strings.Join(names, ", ")))
+	cmd.client.srvmessage(fmt.Sprintf("Here are the available rooms: %s", strings.Join(names, ", ")))
 }
 
 func (s *server) displayRoomInfos(cmd command) {
@@ -139,7 +139,7 @@ func (s *server) displayRoomInfos(cmd command) {
 		names = append(names, client.name)
 	}
 
-	cmd.client.message(fmt.Sprintf("SERVER: List of users connected to the room \"%s\": %s", cmd.client.room.name, strings.Join(names, ", ")))
+	cmd.client.srvmessage(fmt.Sprintf("List of users connected to the room \"%s\": %s", cmd.client.room.name, strings.Join(names, ", ")))
 }
 
 func (s *server) leaveRoom(cmd command) {
@@ -147,19 +147,19 @@ func (s *server) leaveRoom(cmd command) {
 		oldRoom := s.rooms[cmd.client.room.name]
 		delete(s.rooms[cmd.client.room.name].members, cmd.client.name)
 		cmd.client.room = nil
-		oldRoom.broadcast(cmd.client, fmt.Sprintf("SERVER: %s has left the room.", cmd.client.name))
-		cmd.client.message(fmt.Sprintf("SERVER: You left the room \"%s\"", oldRoom.name))
+		oldRoom.broadcastServerMessage(fmt.Sprintf("%s has left the room.", cmd.client.name))
+		cmd.client.srvmessage(fmt.Sprintf("You left the room \"%s\"", oldRoom.name))
 	}
 }
 
 func (s *server) displayHelp(cmd command) {
-	cmd.client.message("SERVER: TODO")
+	cmd.client.srvmessage("TODO")
 }
 
 func (s *server) quit(cmd command) {
 	defer log.Printf("a client as left : %s", cmd.client.conn.RemoteAddr().String())
 	s.leaveRoom(cmd)
-	cmd.client.message("SERVER: Have a good one, see you soon !")
+	cmd.client.srvmessage("Have a good one, see you soon !")
 	cmd.client.conn.Close()
 	delete(s.clients, cmd.client.name)
 }
