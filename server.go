@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"strings"
+	"sync"
 )
 
 type server struct {
@@ -12,6 +13,7 @@ type server struct {
 	clients    map[string]*client
 	commands   chan command
 	connexions uint64
+	mu         sync.Mutex
 }
 
 func NewServer() *server {
@@ -20,6 +22,7 @@ func NewServer() *server {
 		clients:    make(map[string]*client),
 		commands:   make(chan command),
 		connexions: 0,
+		mu:         sync.Mutex{},
 	}
 }
 
@@ -126,19 +129,21 @@ func (s *server) joinRoom(cmd command) {
 
 func (s *server) listRooms(cmd command) {
 	var names []string
+	s.mu.Lock()
 	for name := range s.rooms {
 		names = append(names, name)
 	}
-
+	s.mu.Unlock()
 	cmd.client.srvmessage(fmt.Sprintf("Here are the available rooms: %s", strings.Join(names, ", ")))
 }
 
 func (s *server) displayRoomInfos(cmd command) {
 	var names []string
+	s.mu.Lock()
 	for _, client := range cmd.client.room.members {
 		names = append(names, client.name)
 	}
-
+	s.mu.Unlock()
 	cmd.client.srvmessage(fmt.Sprintf("List of users connected to the room \"%s\": %s", cmd.client.room.name, strings.Join(names, ", ")))
 }
 
